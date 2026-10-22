@@ -1,3 +1,21 @@
+# 未发布 / Unreleased
+
+## 中文
+
+- 兼容 dsh 0.2.x 的提示词变量表：宿主现在只注册 `provider` / `model`，`cwd` 已下线（工作目录改由 `working-directory` 的 **required 运行时上下文**给出：`Current working directory: "..."`）。宿主插值是严格的，未知变量会让 `renderPrompt()` 抛 `unknown prompt variable "{{cwd}}"`，**整轮请求发不出去**。
+- `cordis.patch.yml` 的 `personaSuffix` 改回空串，不再写 `{{cwd}}`。
+- `lib/identity.js`：`CWD_ONLY_SUFFIX` 改成纯文本并强制 `interpolate: false`；旧文案进 `LEGACY_CWD_ONLY` 只用于识别清理；新增 `neutralizeUnknownVariables()`，在把段交回宿主前按**实际变量表**摘掉未注册变量（不按宿主版本号猜，旧宿主仍注册 `cwd` 时变量原样保留）。
+- `lib/core.js`：去掉写死的 `Working directory: {{cwd}}.` 前置句；`isDisposableYamlFoldParagraph()` 同时识别新旧两种 cwd 文案，保证 Clean→Apply 能清掉历史残留。
+- 新增 `npm run check:prompt-vars`（`scripts/check-prompt-vars.mjs`）：跑真实改写链路，断言交回宿主的段里没有未注册变量，可直接挂发布前/CI。
+
+## English
+
+- Prompt-variable compatibility with dsh 0.2.x: the host now registers only `provider` / `model`; `cwd` is gone (the working directory arrives as a **required runtime context**: `Current working directory: "..."`). Interpolation is strict, so an unknown variable makes `renderPrompt()` throw `unknown prompt variable "{{cwd}}"` and the whole turn fails.
+- `cordis.patch.yml` `personaSuffix` is empty again instead of `{{cwd}}`.
+- `lib/identity.js`: `CWD_ONLY_SUFFIX` is plain text and forced to `interpolate: false`; legacy wording moved into `LEGACY_CWD_ONLY` for detection/cleanup only; new `neutralizeUnknownVariables()` strips unregistered variables from sections handed back to the host based on the **actual variable table** (no version sniffing, so hosts that still register `cwd` keep it).
+- `lib/core.js`: the hardcoded `Working directory: {{cwd}}.` prefix is gone; `isDisposableYamlFoldParagraph()` recognises both cwd wordings so Clean→Apply clears leftovers.
+- New `npm run check:prompt-vars` (`scripts/check-prompt-vars.mjs`) walks the real rewrite path and fails if any unregistered variable would reach the host.
+
 # 1.1.71
 
 ## 中文

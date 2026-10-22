@@ -28,7 +28,12 @@
   config:
     includeHarnessIdentity: false
     personaPrefix: ""
-    personaSuffix: Your working directory is {{cwd}}.
+    # 0.2.x 起 cwd 不再是提示词变量（变量表只剩 provider / model），工作目录改由
+    # @deepseek-ai/dsh-working-directory 以 required 运行时上下文给出：
+    #   Current working directory: "<path>".
+    # 这里必须留空串：写 {{cwd}} 会让宿主 renderPrompt() 抛
+    # unknown prompt variable "{{cwd}}"，整轮请求发不出去。
+    personaSuffix: ""
 
 - id: dsh-purge
   inject: [systemPrompt, tools]
