@@ -38,7 +38,9 @@
   "scripts": {
     "embed-prompt": "node scripts/embed-default-prompt.mjs",
     "build:client": "node scripts/build-client.mjs",
-    "check:prompt-vars": "node scripts/check-prompt-vars.mjs"
+    "check:prompt-vars": "node scripts/check-prompt-vars.mjs",
+    "check:patch-anchors": "node scripts/check-patch-anchors.mjs",
+    "check": "npm run check:prompt-vars && npm run check:patch-anchors"
   },
   "license": "SEE LICENSE IN LICENSE",
   "keywords": [

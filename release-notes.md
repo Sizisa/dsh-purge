@@ -6,6 +6,9 @@
 - `cordis.patch.yml` 的 `personaSuffix` 改回空串，不再写 `{{cwd}}`。
 - `lib/identity.js`：`CWD_ONLY_SUFFIX` 改成纯文本并强制 `interpolate: false`；旧文案进 `LEGACY_CWD_ONLY` 只用于识别清理；新增 `neutralizeUnknownVariables()`，在把段交回宿主前按**实际变量表**摘掉未注册变量（不按宿主版本号猜，旧宿主仍注册 `cwd` 时变量原样保留）。
 - `lib/core.js`：去掉写死的 `Working directory: {{cwd}}.` 前置句；`isDisposableYamlFoldParagraph()` 同时识别新旧两种 cwd 文案，保证 Clean→Apply 能清掉历史残留。
+- 修复 Apply 后「**清洗没有写进全部宿主，已取消重启**」：#40 的锚点没认 0.2.x 的 `assemble()` 尾巴（多了 `const requiredContexts = ...`，`contexts:` 行走 required 过滤），匹配 0 次 → 状态 `skipped` → 重启前自检 `hostPromptKeepsInject()` 判“注入会被丢”。新增匹配该尾巴的正则（按 `$1` 原样放回 `requiredContexts` 行，保留宿主的 required 上下文裁剪），并保持重复应用幂等。
+- 该失败的错误体补 `unwritten`（没写进的宿主 base 列表），不再只给一句结论。
+- 新增 `npm run check:patch-anchors`（`scripts/check-patch-anchors.mjs`）：对「tab / 空格缩进 + 有无 requiredContexts」三种尾巴跑真实替换，断言打得上、自检通过、语义不丢、幂等、产物可解析；`npm run check` 两个自检一起跑。
 - 新增 `npm run check:prompt-vars`（`scripts/check-prompt-vars.mjs`）：跑真实改写链路，断言交回宿主的段里没有未注册变量，可直接挂发布前/CI。
 
 ## English
@@ -15,6 +18,9 @@
 - `lib/identity.js`: `CWD_ONLY_SUFFIX` is plain text and forced to `interpolate: false`; legacy wording moved into `LEGACY_CWD_ONLY` for detection/cleanup only; new `neutralizeUnknownVariables()` strips unregistered variables from sections handed back to the host based on the **actual variable table** (no version sniffing, so hosts that still register `cwd` keep it).
 - `lib/core.js`: the hardcoded `Working directory: {{cwd}}.` prefix is gone; `isDisposableYamlFoldParagraph()` recognises both cwd wordings so Clean→Apply clears leftovers.
 - New `npm run check:prompt-vars` (`scripts/check-prompt-vars.mjs`) walks the real rewrite path and fails if any unregistered variable would reach the host.
+- Fix "**清洗没有写进全部宿主，已取消重启**" after Apply: #40's anchors did not recognise the 0.2.x `assemble()` tail (`const requiredContexts = ...` plus required-filtered `contexts:`), matched 0 times, settled as `skipped`, and the pre-restart self-check `hostPromptKeepsInject()` then reported "inject would be dropped". New regex covers that tail, re-emits the captured `requiredContexts` line via `$1` so the host's required-context filtering is preserved, and stays idempotent.
+- That failure now returns `unwritten` (the host bases that were not written) instead of a bare verdict.
+- New `npm run check:patch-anchors` (`scripts/check-patch-anchors.mjs`): runs the real replacements over three tails (tab / space, with and without `requiredContexts`) and asserts applied, self-check green, semantics preserved, idempotent, output parseable. `npm run check` runs both guards.
 
 # 1.1.71
 
