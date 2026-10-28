@@ -1,7 +1,11 @@
-# 未发布 / Unreleased
+# 1.1.72
 
 ## 中文
 
+- 版本 **1.1.72**。
+- 移植上游 1.1.81 的**注入来源优先级修正（#74）**：`rules.resolveInjectText()` 改为「本进程框内提交 > `$DSH_HOME/prompt-inject.md` > 加密槽」。此前磁盘优先，会出现「框里改了但磁盘旧文件盖住」「UI 显示 A、实际注入 B」。`source` 判定改用归一化文本比对，换行/空白不再影响。
+- 移植上游 1.1.81 的 **ChatML 信封规整**：新增 `normalizeChatmlLayout()` / `peelChatmlEnvelope()` / `stripChatmlTags()`。`<|im_start|>system:<project_instructions>` 粘连会拆成两行（尖括号被当半截标签时注入整段失效），缺 `</project_instructions>` 自动补，官方段里漏进来的 ChatML / project 标签剥掉。接线：`rewritePromptAssembly()` 注入正文、`registerPromptSections()` 段文本、`refreshHungOperator()` 钉给宿主的正文。
+- **更新源改为本仓库 `Sizisa/dsh-purge`**：`lib/update.js` 的 `REPO`、`lib/redteam/ui.js` 的仓库兜底、`package.json` 的 `repository` / `homepage` / `bugs` / `dsh.install`。上游 `YuJunZhiXue/dsh-purge` 仅作同步参考，署名与致谢链接保持原样。
 - 兼容 dsh 0.2.x 的提示词变量表：宿主现在只注册 `provider` / `model`，`cwd` 已下线（工作目录改由 `working-directory` 的 **required 运行时上下文**给出：`Current working directory: "..."`）。宿主插值是严格的，未知变量会让 `renderPrompt()` 抛 `unknown prompt variable "{{cwd}}"`，**整轮请求发不出去**。
 - `cordis.patch.yml` 的 `personaSuffix` 改回空串，不再写 `{{cwd}}`。
 - `lib/identity.js`：`CWD_ONLY_SUFFIX` 改成纯文本并强制 `interpolate: false`；旧文案进 `LEGACY_CWD_ONLY` 只用于识别清理；新增 `neutralizeUnknownVariables()`，在把段交回宿主前按**实际变量表**摘掉未注册变量（不按宿主版本号猜，旧宿主仍注册 `cwd` 时变量原样保留）。
@@ -13,6 +17,10 @@
 
 ## English
 
+- Version **1.1.72**.
+- Ported upstream 1.1.81's **inject-source precedence fix (#74)**: `rules.resolveInjectText()` now resolves "in-process composer box > `$DSH_HOME/prompt-inject.md` > sealed slot". Disk used to win, which surfaced as "edited in the box but an older disk file overrode it" and "UI shows A while B is injected". `source` detection now compares normalised text, so line endings/whitespace no longer flip it.
+- Ported upstream 1.1.81's **ChatML envelope normalisation**: new `normalizeChatmlLayout()` / `peelChatmlEnvelope()` / `stripChatmlTags()`. A glued `<|im_start|>system:<project_instructions>` becomes two lines (a glued tag reads as a half tag and the whole inject goes dead), a missing `</project_instructions>` is appended, and ChatML / project tags leaked into official sections are stripped. Wired into `rewritePromptAssembly()`, `registerPromptSections()` and `refreshHungOperator()`.
+- **Update source now points at this repository (`Sizisa/dsh-purge`)**: `REPO` in `lib/update.js`, the repo fallback in `lib/redteam/ui.js`, and `repository` / `homepage` / `bugs` / `dsh.install` in `package.json`. Upstream `YuJunZhiXue/dsh-purge` stays a sync reference only; attribution links are untouched.
 - Prompt-variable compatibility with dsh 0.2.x: the host now registers only `provider` / `model`; `cwd` is gone (the working directory arrives as a **required runtime context**: `Current working directory: "..."`). Interpolation is strict, so an unknown variable makes `renderPrompt()` throw `unknown prompt variable "{{cwd}}"` and the whole turn fails.
 - `cordis.patch.yml` `personaSuffix` is empty again instead of `{{cwd}}`.
 - `lib/identity.js`: `CWD_ONLY_SUFFIX` is plain text and forced to `interpolate: false`; legacy wording moved into `LEGACY_CWD_ONLY` for detection/cleanup only; new `neutralizeUnknownVariables()` strips unregistered variables from sections handed back to the host based on the **actual variable table** (no version sniffing, so hosts that still register `cwd` keep it).
