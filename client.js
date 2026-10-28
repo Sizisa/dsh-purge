@@ -177,6 +177,8 @@ window.__ModuleLoader__.load({ id: "dsh-purge", factory: (require) => {
 			"pack.title": "人格包",
 			"pack.custom": "自定义（当前正文）",
 			"pack.builtin": "默认（内置）",
+			"pack.builtinNamed": "{name}（内置）",
+			"pack.factoryNamed": "{name}（出厂）",
 			"pack.name": "包名",
 			"pack.save": "存为包",
 			"pack.delete": "删除包",
@@ -531,6 +533,8 @@ window.__ModuleLoader__.load({ id: "dsh-purge", factory: (require) => {
 			"pack.title": "Prompt packs",
 			"pack.custom": "Custom (current text)",
 			"pack.builtin": "Default (built-in)",
+			"pack.builtinNamed": "{name} (built-in)",
+			"pack.factoryNamed": "{name} (factory)",
 			"pack.name": "Pack name",
 			"pack.save": "Save as pack",
 			"pack.delete": "Delete pack",
@@ -2092,7 +2096,10 @@ body:not([data-ds-dark-theme]) .dshp-auth-ops button.primary{background:var(--ds
 						},
 					},
 						h("option", { key: "__custom", value: "" }, t("pack.custom")),
-						packs.map((p) => h("option", { key: p.id, value: p.id }, p.builtin ? t("pack.builtin") : p.id)),
+						packs.map((p) => h("option", { key: p.id, value: p.id },
+							p.builtin ? t("pack.builtinNamed", { name: p.name })
+								: p.factory ? t("pack.factoryNamed", { name: p.id })
+									: p.id)),
 					),
 					h("input", {
 						className: "dshp-field",
@@ -2110,7 +2117,8 @@ body:not([data-ds-dark-theme]) .dshp-auth-ops button.primary{background:var(--ds
 					}, t("pack.save")),
 					h(Btn, {
 						tiny: true,
-						disabled: patchBusy || !packId,
+						disabled: patchBusy || !packId || packId === "default"
+							|| Boolean(packs.find((p) => p && p.id === packId && p.factory)),
 						onClick: () => packsAction("delete", { id: packId }, "saved.pack.deleted"),
 					}, t("pack.delete")),
 				),

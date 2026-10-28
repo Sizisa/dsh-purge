@@ -1,3 +1,19 @@
+# 1.1.74
+
+## 中文
+
+- 版本 **1.1.74**。
+- **出厂人格包**：`presets/personas/*.md` 随包分发，设置页下拉里显示 `id（出厂）`，只读、不可删除；用户目录 `$DSH_HOME/prompts/<id>.md` 的同名文件不覆盖出厂包。激活方式与用户包一致（写 `prompt-inject.md`）。
+- 内置包的显示名改为**小码酱**，下拉里标 `小码酱（内置）`，不再是含糊的「默认」。
+- 目录约定与格式写在 `presets/personas/README.md`。
+
+## English
+
+- Version **1.1.74**.
+- **Factory prompt packs**: `presets/personas/*.md` ships with the package and appears in the settings dropdown as `id (factory)`, read-only and not deletable; a same-named file under `$DSH_HOME/prompts/<id>.md` does not override it. Activation matches user packs (writes `prompt-inject.md`).
+- The built-in pack is now labelled **小码酱**, shown as `小码酱 (built-in)` instead of the vague "Default".
+- Folder convention and format documented in `presets/personas/README.md`.
+
 # 1.1.73
 
 ## 中文
