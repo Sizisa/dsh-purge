@@ -1,3 +1,18 @@
+# 1.1.73
+
+## 中文
+
+- 版本 **1.1.73**。
+- 修**注入写两遍**：宿主一步里会走两遍 rewrite（guard 一遍 + rewriteFn 一遍），第二遍认不出上一轮折进 persona 的注入（宿主会把 `\n  - ` 改写成 `\n - `），于是再补一份，system 里出现两份完整注入（实测 21.8K → 50.4K 字符）。判等改为「剥 ChatML + 空白折叠」后比较（`normalizeInjectForCompare`），`assemblyHasExactInject` / `foldInjectIntoPersona` 都用它；并且**已经承载注入的那一段保留 ChatML 信封**，第二遍不再把信封当杂标签剥掉。
+- 新增**人格包**（prompt packs）：`$DSH_HOME/prompts/<id>.md` + `state.json`，多份注入正文一键切换。设置页「提示词」上方加下拉/包名/存为包/删除；新增 `/dsh-purge/packs`（GET 列表，POST `activate` / `save` / `delete`）。激活走 `core.saveOverrideContent`（原子写 + 钉住），与手动保存同一口径；`default` 表示内置加密槽正文，激活即还原默认。磁盘正文被手改后自动退回「自定义」。
+- 包 id 直接当文件名：只挡路径分隔符与点开头，中文包名可用（`凯斯特雷尔 人格` → `凯斯特雷尔-人格`）。
+
+## English
+
+- Version **1.1.73**.
+- Fixed **duplicate injection**: one host step runs rewrite twice (guard pass + rewriteFn pass). The second pass could not recognise the inject folded into the persona in the first pass (the host rewrites `\n  - ` to `\n - `), so it prepended another copy and the system prompt carried the whole body twice (measured 21.8K to 50.4K chars). Comparison now normalises ChatML and whitespace (`normalizeInjectForCompare`) and both `assemblyHasExactInject` and `foldInjectIntoPersona` use it; the section that already carries the inject keeps its ChatML envelope instead of being stripped as stray tags.
+- Added **prompt packs**: `$DSH_HOME/prompts/<id>.md` plus `state.json`, switchable inject bodies. The Prompt panel gains a pack dropdown, a pack name field, save-as-pack and delete; new `/dsh-purge/packs` route (GET list, POST `activate` / `save` / `delete`). Activation goes through `core.saveOverrideContent` (atomic write, pinned), identical to saving by hand; `default` means the sealed built-in body. Hand edits to the file fall back to "custom".
+
 # 1.1.72
 
 ## 中文
