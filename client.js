@@ -174,6 +174,16 @@ window.__ModuleLoader__.load({ id: "dsh-purge", factory: (require) => {
 			"theme.ink": "墨",
 			"purge.title": "补丁",
 			"override.title": "提示词",
+			"pack.title": "人格包",
+			"pack.custom": "自定义（当前正文）",
+			"pack.builtin": "默认（内置）",
+			"pack.name": "包名",
+			"pack.save": "存为包",
+			"pack.delete": "删除包",
+			"saved.pack.activated": "已切换人格包",
+			"saved.pack.saved": "已保存人格包",
+			"saved.pack.deleted": "已删除人格包",
+			"err.pack": "人格包操作失败：{error}",
 			"own.title": "自己的服务器",
 			"own.hint": "每行一个 IP 或完整主机名。可以写成 账号@主机，账号只用来认出这种写法。主机名会连同它当时解析出的地址一起放行。不要写密钥、密码、网段。",
 			"own.save": "保存名单",
@@ -518,6 +528,16 @@ window.__ModuleLoader__.load({ id: "dsh-purge", factory: (require) => {
 			"theme.ink": "Ink",
 			"purge.title": "Patches",
 			"override.title": "Prompt",
+			"pack.title": "Prompt packs",
+			"pack.custom": "Custom (current text)",
+			"pack.builtin": "Default (built-in)",
+			"pack.name": "Pack name",
+			"pack.save": "Save as pack",
+			"pack.delete": "Delete pack",
+			"saved.pack.activated": "Prompt pack activated",
+			"saved.pack.saved": "Prompt pack saved",
+			"saved.pack.deleted": "Prompt pack deleted",
+			"err.pack": "Prompt pack action failed: {error}",
 			"own.title": "Own servers",
 			"own.hint": "One IP or exact hostname per line. account@host is accepted; the account only identifies that host. A hostname also allows the addresses it resolves to. Do not enter a key, a password, or a range.",
 			"own.save": "Save list",
@@ -1400,6 +1420,9 @@ body:not([data-ds-dark-theme]) .dshp-auth-ops button.primary{background:var(--ds
 			const [override, setOverride] = useState("");
 			const [defaultOverride, setDefaultOverride] = useState("");
 			const [overrideLoaded, setOverrideLoaded] = useState(false);
+			const [packs, setPacks] = useState([]);
+			const [packId, setPackId] = useState("");
+			const [packName, setPackName] = useState("");
 			const [ownServers, setOwnServers] = useState("");
 			const [ownLoaded, setOwnLoaded] = useState(false);
 			const [patchBusy, setPatchBusy] = useState(false);
@@ -1610,6 +1633,13 @@ body:not([data-ds-dark-theme]) .dshp-auth-ops button.primary{background:var(--ds
 						else setNotice({ kind: "error", text: tr("err.override", { error: (d && d.error) || "" }) });
 					})
 					.catch((e) => setNotice({ kind: "error", text: tr("err.override", { error: e.message }) }));
+				apiJson("/dsh-purge/packs")
+					.then((d) => {
+						if (!d || !d.ok) return;
+						if (Array.isArray(d.packs)) setPacks(d.packs);
+						setPackId(typeof d.active === "string" ? d.active : "");
+					})
+					.catch(() => {});
 				apiJson("/dsh-purge/own-servers")
 					.then((d) => {
 						if (d && d.ok) {
@@ -1762,6 +1792,36 @@ body:not([data-ds-dark-theme]) .dshp-auth-ops button.primary{background:var(--ds
 					go();
 				});
 			}, [t, rejectNeedPrompt]);
+
+			const packsAction = useCallback((action, payload, okKey) => {
+				const tr = tRef.current;
+				setPatchBusy(true);
+				setNotice({ kind: "idle", text: "" });
+				fetch("/dsh-purge/packs", {
+					method: "POST",
+					headers: { "content-type": "application/json" },
+					body: JSON.stringify(Object.assign({ action: action }, payload || {})),
+				})
+					.then((r) => r.json())
+					.then((d) => {
+						if (!d || !d.ok) {
+							setNotice({ kind: "error", text: tr("err.pack", { error: (d && d.error) || "" }) });
+							return;
+						}
+						if (typeof d.content === "string") {
+							overrideRef.current = d.content;
+							setOverride(d.content);
+							promptDirtyRef.current = false;
+						}
+						if (Array.isArray(d.packs)) setPacks(d.packs);
+						setPackId(typeof d.active === "string" ? d.active : "");
+						setNotice({ kind: "ok", text: tr(okKey) });
+					})
+					.catch((e) => {
+						setNotice({ kind: "error", text: tr("err.pack", { error: e.message }) });
+					})
+					.finally(() => setPatchBusy(false));
+			}, []);
 
 			const restoreOverride = useCallback(() => {
 				if (!defaultOverride) return;
@@ -2015,6 +2075,45 @@ body:not([data-ds-dark-theme]) .dshp-auth-ops button.primary{background:var(--ds
 				// h(ContinueRetrySection, null),
 				h("div", { className: "dshp-sub" },
 					h("h4", null, t("override.title")),
+				h("div", { className: "dshp-row", style: { margin: "0 0 6px", flexWrap: "wrap" } },
+					h("select", {
+						className: "dshp-field",
+						style: { minWidth: 150, flex: "0 0 auto" },
+						value: packId || "",
+						disabled: patchBusy || !overrideLoaded,
+						"aria-label": t("pack.title"),
+						onChange: (e) => {
+							const next = e.target.value;
+							if (!next) {
+								setPackId("");
+								return;
+							}
+							packsAction("activate", { id: next }, "saved.pack.activated");
+						},
+					},
+						h("option", { key: "__custom", value: "" }, t("pack.custom")),
+						packs.map((p) => h("option", { key: p.id, value: p.id }, p.builtin ? t("pack.builtin") : p.id)),
+					),
+					h("input", {
+						className: "dshp-field",
+						type: "text",
+						style: { minWidth: 120, flex: "0 0 auto" },
+						value: packName,
+						placeholder: t("pack.name"),
+						disabled: patchBusy || !overrideLoaded,
+						onChange: (e) => setPackName(e.target.value),
+					}),
+					h(Btn, {
+						tiny: true,
+						disabled: patchBusy || !overrideLoaded || !String(packName || "").trim(),
+						onClick: () => packsAction("save", { id: packName, content: readPromptBox() }, "saved.pack.saved"),
+					}, t("pack.save")),
+					h(Btn, {
+						tiny: true,
+						disabled: patchBusy || !packId,
+						onClick: () => packsAction("delete", { id: packId }, "saved.pack.deleted"),
+					}, t("pack.delete")),
+				),
 					h("div", { className: "dshp-row", style: { margin: 0 } },
 						h(Btn, { kind: "primary", tiny: true, disabled: patchBusy || !overrideLoaded, onClick: saveOverride }, t("btn.saveInject")),
 						h(Btn, { tiny: true, disabled: patchBusy || !overrideLoaded || !defaultOverride, onClick: restoreOverride }, t("btn.restoreInject")),
